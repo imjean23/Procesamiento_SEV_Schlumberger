@@ -1,30 +1,33 @@
-# Procesamiento y Corrección de Datos SEV (Arreglo Schlumberger)
+# Corrección y Empalme de Sondeos SEV (Schlumberger)
 
-## ¿De qué trata este proyecto?
-Este es un script en Python diseñado para automatizar el procesamiento de datos crudos de Sondeos Eléctricos Verticales (SEV). 
+## El Problema Físico
+Cuando hacemos sondeos eléctricos verticales en campo y nos toca abrir los electrodos de potencial (MN), la curva de resistividad aparente suele dar un "salto" debido al ruido o las variaciones superficiales del terreno. 
 
-Durante el trabajo de campo con el método Schlumberger, es obligatorio abrir los electrodos de potencial (MN) a medida que la señal pierde fuerza. Esto genera "saltos" en la curva de resistividad aparente debido a las variaciones laterales superficiales del terreno. Si estos datos con ruido se introducen directamente a un software de inversión, el programa calculará estratos falsos.
+Si agarramos estos datos crudos del resistivímetro y los metemos directamente a un software de inversión como IPI2Win, el programa va a intentar ajustar la curva inventando capas geológicas falsas que no existen en la realidad.
 
-Este código toma el archivo crudo del equipo, normaliza las unidades, hace los cálculos geofísicos base y aplica un algoritmo de *shifting* para empalmar la curva. El resultado es un modelo 1D continuo, listo para la inversión geofísica.
+## ¿Qué hace este código?
+Escribí este programa para dejar de corregir empalmes a mano en Excel. 
 
-## Stack Tecnológico
+El script no procesa los archivos uno por uno. Lee una carpeta entera llena de sondeos crudos en `.csv`, estandariza las unidades eléctricas que escupe el equipo (mV, mA, etc.) y aplica un factor de corrección matemático (*shifting*). El algoritmo ancla la parte profunda de la curva (que es más confiable) y arrastra los datos superficiales para cerrar el escalón, preservando la pendiente logarítmica real.
+
+Al terminar, genera archivos `.txt` limpios y formateados estrictamente para leerlos directo en software de inversión.
+
+## Herramientas Utilizadas
 * **Python 3**
-* **Pandas:** Para la ingesta del archivo `.csv` y la manipulación de la base de datos (reemplazando el trabajo manual en Excel).
-* **NumPy:** Para el cálculo de constantes matemáticas (Pi) y operaciones del factor geométrico (K).
-* **Matplotlib:** Para renderizar la gráfica de control en escala bilogarítmica.
+* **Pandas & NumPy:** Para calcular el Factor Geométrico (K) vectorizando columnas enteras en lugar de usar celdas.
+* **os & glob:** Para el procesamiento masivo. El programa entra al directorio, detecta todos los archivos `.csv` y los procesa en bucle sin que yo tenga que escribir los nombres manualmente.
 
-## Pipeline del Script
-1. **Ingesta y Limpieza:** Lee un `.csv` con las lecturas de campo (`AB_2`, `MN_2`, `V`, `I`, `R`). Una función estandariza automáticamente las unidades eléctricas a un solo formato (mV, uV, mA, etc.).
-2. **Cálculo Base:** Determina el Factor Geométrico (K) y calcula la Resistividad Aparente ($\rho_a$) inicial.
-3. **Empalme Matemático:** El algoritmo detecta los puntos de solapamiento (donde se repite $AB/2$ al cambiar $MN$) y calcula un factor de corrección. Este factor se aplica de forma acumulativa al tramo anterior de la curva, eliminando el error geométrico sin alterar la pendiente de las capas.
-4. **Exportación a IPI2Win:** Extrae únicamente las columnas de distancia y resistividad corregida, y genera un archivo `.txt` delimitado por tabulaciones (sin índices de fila). Este es el formato estricto que exigen los softwares de inversión como IPI2Win o RES1D.
+## Cómo usarlo
+1. Mete todos tus archivos `.csv` crudos en la carpeta `Datos/`.
+2. Ejecuta el script desde la terminal:
 
-## Ejecución
-Asegúrate de que tu archivo crudo esté en la carpeta `Datos/` y corre el script principal:
 ```bash
 python main.py
 ```
 
+3. El programa escupirá los archivos corregidos automáticamente en la carpeta `Resultados/`.
+
 ## Autor
-**Jean Ruiz Renteria** Estudiante de Ingeniería Geológica (Universidad Nacional de Piura).  
-Enfocado en la integración de Data Science y programación en Python aplicados a la geomecánica, geotecnia y geofísica.
+**Jean Ruiz Renteria**
+Estudiante de Ingeniería Geológica (Universidad Nacional de Piura).
+Enfocado en aplicar Python para solucionar problemas operativos de geomecánica, geotecnia y geofísica.
